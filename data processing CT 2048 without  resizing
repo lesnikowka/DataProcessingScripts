@@ -1,0 +1,100 @@
+
+import os
+import sys
+import random
+import numpy as np
+import cv2
+from matplotlib import pyplot as plt
+import tensorflow as tf
+from tensorflow import keras
+from keras.layers import Conv3D
+from keras.layers import Conv3DTranspose
+from keras.layers import MaxPool3D
+from keras.layers import UpSampling3D
+from keras.layers import Conv2D
+from keras.layers import Conv2DTranspose
+from keras.layers import MaxPool2D
+from keras.layers import UpSampling2D
+from keras.layers import Concatenate
+from keras.layers import Flatten
+import cv2
+import torchio as tio
+import torch
+import gc
+import keras.backend as K
+from datetime import datetime
+import zipfile
+import random
+from skimage.transform import resize
+
+folder = 'E:/MEGA Downloads/ct_train/'
+
+labels_keys = (0,205,420,500,550,600,820,850)
+
+def get_closest_value(target_value):
+  return min(labels_keys, key=lambda x: abs(target_value - x))
+
+labels = [
+    [  0 , 0],
+    [500 , 1],
+    [600 , 2],
+    [420 , 3],
+    [550 , 4],
+    [205 , 5],
+    [820 , 6],
+    [850 , 7]
+]
+
+def to_categorical(masks):
+    for i in range(len(masks)):
+        print(i, end=' ')
+        for j in range(1, len(labels)):
+            mask_ = masks[i] == labels[j][0]
+            masks[i][mask_] = labels[j][1]
+        mask_ = masks[i] >= 0
+        masks[i] = np.multiply(masks[i], mask_)
+        mask_ = masks[i] <= 7
+        masks[i] = np.multiply(masks[i], mask_)
+    return masks
+
+def load_data(first, num):
+    dirs = os.listdir(folder)
+    dirs.sort()
+    print(dirs)
+    images, masks = [], []
+    print("loading...")
+    for i in range(first, first + num):
+        print(i, end=' ')
+        image = np.array(tio.ScalarImage(folder + dirs[i * 2]))
+        mask = np.array(tio.ScalarImage(folder + dirs[i * 2 + 1]))
+        image = image / 2048
+        mask_ = image <= 1
+        mask__ = image >= -1
+        image = np.multiply(image, mask_)
+        image = np.multiply(image, mask__)
+        image = image.astype('float16')
+        mask = mask.astype('int16')
+        image = np.swapaxes(image, 0, 3)
+        mask = np.swapaxes(mask, 0, 3)
+        images.append(image)
+        masks.append(mask)
+    return images, masks
+
+images, masks = load_data(0,20)
+
+print("\ncategorization...")
+masks = to_categorical(masks)
+
+out_folder = 'E:/arrays/2048/'
+
+print("\nsaving...")
+for i in range(len(images)):
+    print(i, end=' ')
+    np.save(out_folder + "images/" + str(i), images[i])
+    np.save(out_folder + "masks/" + str(i), masks[i])
+
+
+
+
+
+
