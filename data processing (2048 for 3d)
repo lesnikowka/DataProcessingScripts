@@ -1,0 +1,73 @@
+import os
+import sys
+import random
+import numpy as np
+import cv2
+from matplotlib import pyplot as plt
+import tensorflow as tf
+from tensorflow import keras
+from keras.layers import Conv3D
+from keras.layers import Conv3DTranspose
+from keras.layers import MaxPool3D
+from keras.layers import UpSampling3D
+from keras.layers import Conv2D
+from keras.layers import Conv2DTranspose
+from keras.layers import MaxPool2D
+from keras.layers import UpSampling2D
+from keras.layers import Concatenate
+from keras.layers import Flatten
+import cv2
+import torchio as tio
+import torch
+import gc
+import keras.backend as K
+from datetime import datetime
+import zipfile
+import random
+from skimage.transform import resize
+
+folder = 'E:/arrays/2048/'
+
+WIDTH = 128
+HEIGHT = 128
+NUM_LAYERS = 160
+
+def to_white(masks):
+    for i in range(len(masks)):
+        print(i, end=" ")
+        masks[i] = masks[i] > 0
+        masks[i] = masks[i].astype('int16')
+    print()
+    return masks
+
+def resize_data(images, masks):
+    for i in range(len(images)):
+        print(i, end=" ")
+        images[i] = images[i].astype('float32')
+        masks[i] = masks[i].astype('float32')
+        images[i] = resize(image=images[i], output_shape=(NUM_LAYERS, WIDTH, HEIGHT), anti_aliasing=False)
+        masks[i] = resize(image=masks[i], output_shape=(NUM_LAYERS, WIDTH, HEIGHT), anti_aliasing=False)
+        images[i] = images[i].astype('float16')
+        masks[i] = masks[i].astype('int16')
+    print()
+    return images, masks
+def load_data(first, num):
+    images, masks = [], []
+    for i in range(first, first + num):
+        print(i, end=" ")
+        image = np.load(folder + "images/" + str(i) + ".npy")
+        mask = np.load(folder + "masks/" + str(i) + ".npy")
+        images.append(image)
+        masks.append(mask)
+    print()
+    return images, masks
+
+images, masks = load_data(0,20)
+masks = to_white(masks)
+images, masks = resize_data(images, masks)
+
+out_folder = 'E:/arrays/2048for3d/'
+
+for i in range(len(images)):
+    np.save(out_folder + "images/" + str(i), images[i])
+    np.save(out_folder + "masks/" + str(i), masks[i])
